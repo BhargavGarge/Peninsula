@@ -1,5 +1,6 @@
 import { Router } from "express";
 import prisma from "../utils/db.js";
+import { generateNextId } from "../utils/idGenerator.js";
 
 const router = Router();
 
@@ -42,8 +43,11 @@ router.post("/", async (req, res) => {
         .json({ message: "Name, price and stock are required" });
     }
 
+    const id = await generateNextId("p", "product");
+
     const product = await prisma.product.create({
       data: {
+        id,
         name,
         price: Number(price),
         stock: Number(stock),
@@ -83,8 +87,26 @@ router.put("/:id", async (req, res) => {
 
 router.delete("/:id", async (req, res) => {
   try {
-    await prisma.product.delete({
+    // First, check if product exists
+    const product = await prisma.product.findUnique({
       where: { id: req.params.id },
+    });
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Delete all OrderItems that reference this product, then delete the product
+    await prisma.$transaction(async (tx) => {
+      // Delete all order items that reference this product
+      await tx.orderItem.deleteMany({
+        where: { productId: req.params.id },
+      });
+
+      // Now delete the product
+      await tx.product.delete({
+        where: { id: req.params.id },
+      });
     });
 
     res.status(204).send();

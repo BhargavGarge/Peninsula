@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Product {
-  id        String   @id @default(uuid())
+  id        String   @id
   name      String
   price     Float
   stock     Int
@@ -18,7 +18,7 @@ model Product {
 }
 
 model Customer {
-  id        String   @id @default(uuid())
+  id        String   @id
   name      String
   phone     String?
   email     String?
@@ -27,7 +27,7 @@ model Customer {
 }
 
 model Order {
-  id          String      @id @default(uuid())
+  id          String      @id
   customerId  String?
   customer    Customer?   @relation(fields: [customerId], references: [id])
   total       Float
